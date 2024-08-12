@@ -15,6 +15,9 @@
 	},
 	"permissions": [
 		"sidePanel",
-		"contextMenus"
+		"contextMenus",
+		"scripting",
+		"http://*/",
+		"https://*/"
 	]
 }

@@ -16,72 +16,138 @@ window.addEventListener("load", loadChats);
 function sendMessage() {
   const userInput = document.getElementById("userInput");
   const message = userInput.value.trim();
-  if (message === "") return;
+  const apiKey = document.getElementById("apiKeyInput").value.trim();
 
-  appendMessage("You", message);
-  saveChat("You", message);
+  if (message === "" || apiKey === "") {
+    appendSystemMessage("Please enter a message and set the API key.");
+    return;
+  }
+
+  const chat = { user: message, bot: "" };
+  appendMessage(chat, true);
+  saveChat(chat);
   userInput.value = "";
 
   // Replace with your endpoint
-  const apiUrl = "https://api.example.com/chatbot";
+  const apiUrl =
+    "https://nsfw-chat-bot-dortroxs-projects.vercel.app/api/message";
 
   fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `${apiKey}`,
+      "Access-Control-Allow-Origin": "*",
     },
     body: JSON.stringify({ message: message }),
   })
     .then((response) => response.json())
     .then((data) => {
-      appendMessage("Bot", data.response);
-      saveChat("Bot", data.response);
+      chat.bot = data.response;
+      updateChat(chat);
+      appendMessage(chat, false);
     })
     .catch((error) => {
       console.error("Error:", error);
       const errorMessage = "Sorry, something went wrong with the API.";
-      appendMessage("Bot", errorMessage);
-      saveChat("Bot", errorMessage);
+      chat.bot = errorMessage;
+      updateChat(chat);
+      appendMessage(chat, false);
     });
 }
 
-function appendMessage(sender, message, index = null) {
+function appendSystemMessage(message) {
   const chatWindow = document.getElementById("chatWindow");
   const messageElement = document.createElement("div");
-  messageElement.classList.add("p-2", "my-2", "rounded", "shadow");
   messageElement.classList.add(
-    sender === "You" ? "bg-blue-100" : "bg-gray-200"
+    "p-2",
+    "my-2",
+    "rounded",
+    "shadow",
+    "bg-yellow-200"
   );
-  messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
-
-  // Add delete button
-  const deleteButton = document.createElement("button");
-  deleteButton.textContent = "Delete";
-  deleteButton.classList.add("ml-2", "text-red-500");
-  deleteButton.addEventListener("click", () => deleteMessage(index));
-  messageElement.appendChild(deleteButton);
-
+  messageElement.innerHTML = `<strong>System:</strong> ${message}`;
   chatWindow.appendChild(messageElement);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function saveChat(sender, message) {
+function appendMessage(chat, isUser) {
+  const chatWindow = document.getElementById("chatWindow");
+  const messageElement = document.createElement("div");
+  messageElement.classList.add(
+    "p-2",
+    "my-2",
+    "rounded",
+    "shadow",
+    "flex",
+    "justify-between",
+    "items-center"
+  );
+  messageElement.classList.add(isUser ? "bg-blue-100" : "bg-gray-200");
+
+  const messageContent = document.createElement("div");
+  messageContent.innerHTML = `<strong>${isUser ? "You" : "Bot"}:</strong> ${
+    isUser ? chat.user : chat.bot
+  }`;
+
+  const copyButton = document.createElement("button");
+  copyButton.classList.add(
+    "ml-2",
+    "bg-gray-300",
+    "text-gray-700",
+    "p-1",
+    "rounded",
+    "hover:bg-gray-400"
+  );
+  copyButton.innerText = "Copy";
+  copyButton.addEventListener("click", () => {
+    navigator.clipboard
+      .writeText(isUser ? chat.user : chat.bot)
+      .then(() => {})
+      .catch((err) => {
+        console.error("Could not copy text: ", err);
+      });
+  });
+
+  messageElement.appendChild(messageContent);
+  messageElement.appendChild(copyButton);
+  chatWindow.appendChild(messageElement);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function saveChat(chat) {
   const chats = JSON.parse(localStorage.getItem("chats")) || [];
-  chats.push({ sender, message });
+  chats.push(chat);
   localStorage.setItem("chats", JSON.stringify(chats));
+}
+
+function updateChat(updatedChat) {
+  const chats = JSON.parse(localStorage.getItem("chats")) || [];
+  const index = chats.findIndex(
+    (chat) => chat.user === updatedChat.user && chat.bot === ""
+  );
+  if (index !== -1) {
+    chats[index] = updatedChat;
+    localStorage.setItem("chats", JSON.stringify(chats));
+  }
 }
 
 function loadChats() {
   const chats = JSON.parse(localStorage.getItem("chats")) || [];
-  chats.forEach((chat, index) => {
-    appendMessage(chat.sender, chat.message, index);
+  chats.forEach((chat) => {
+    appendMessage(chat, true);
+    if (chat.bot) {
+      appendMessage(chat, false);
+    }
   });
 }
 
-function deleteMessage(index) {
+function deleteMessage(chatToDelete) {
   const chats = JSON.parse(localStorage.getItem("chats")) || [];
-  chats.splice(index, 1);
-  localStorage.setItem("chats", JSON.stringify(chats));
+  const updatedChats = chats.filter(
+    (chat) => chat.user !== chatToDelete.user || chat.bot !== chatToDelete.bot
+  );
+  localStorage.setItem("chats", JSON.stringify(updatedChats));
   reloadChats();
 }
 

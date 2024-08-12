@@ -1,0 +1,1 @@
+try adding this: https://developer.chrome.com/docs/extensions/reference/api/contextMenus
