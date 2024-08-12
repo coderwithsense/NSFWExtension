@@ -32,28 +32,19 @@ function sendMessage() {
   const apiUrl =
     "https://nsfw-chat-bot-dortroxs-projects.vercel.app/api/message";
 
-  fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `${apiKey}`,
-      "Access-Control-Allow-Origin": "*",
-    },
-    body: JSON.stringify({ message: message }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      chat.bot = data.response;
-      updateChat(chat);
-      appendMessage(chat, false);
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      const errorMessage = "Sorry, something went wrong with the API.";
-      chat.bot = errorMessage;
-      updateChat(chat);
-      appendMessage(chat, false);
-    });
+  chrome.runtime.sendMessage(
+    { action: "fetchApi", apiUrl, apiKey, message },
+    (response) => {
+      if (response.success) {
+        console.log(response.data);
+        chat.bot = response.data.message;
+        appendMessage(chat, false);
+        saveChat(chat);
+      } else {
+        appendSystemMessage("Error: " + response.error);
+      }
+    }
+  );
 }
 
 function appendSystemMessage(message) {

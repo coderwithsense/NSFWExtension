@@ -17,7 +17,14 @@
 		"sidePanel",
 		"contextMenus",
 		"scripting",
+		"activeTab",
 		"http://*/",
 		"https://*/"
+	],
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js": ["js/chat.js"]
+		}
 	]
 }

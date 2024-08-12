@@ -1,3 +1,20 @@
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "fetchApi") {
+    fetch(request.apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${request.apiKey}`,
+      },
+      body: JSON.stringify({ message: request.message }),
+    })
+      .then((response) => response.json())
+      .then((data) => sendResponse({ success: true, data }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true; // Will respond asynchronously.
+  }
+});
+
 // chrome.contextMenus.onClicked.addListener(genericOnClick);
 
 // // Allows users to open the side panel by clicking on the action toolbar icon
